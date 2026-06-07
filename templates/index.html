@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ФрутСнаб — система подбора поставщиков</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <!-- ЭКРАН ВХОДА -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="login-brand">
+        <span class="logo-mark">◆</span>
+        <div>
+          <div class="brand-name">ФрутСнаб</div>
+          <div class="brand-sub">подбор поставщиков и финансы</div>
+        </div>
+      </div>
+      <h1 class="login-title">Вход в систему</h1>
+      <form id="login-form" autocomplete="on">
+        <label class="field">
+          <span>Логин</span>
+          <input type="text" id="login-username" required autocomplete="username">
+        </label>
+        <label class="field">
+          <span>Пароль</span>
+          <input type="password" id="login-password" required autocomplete="current-password">
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Войти</button>
+        <p id="login-error" class="login-error" hidden></p>
+      </form>
+      <div class="login-hint">
+        <div class="hint-title">Тестовые аккаунты</div>
+        <button class="chip" data-u="buyer" data-p="BUYER">Закупщик · buyer</button>
+        <button class="chip" data-u="manager" data-p="MANAGER">Менеджер · manager</button>
+        <button class="chip" data-u="director" data-p="DIRECTOR">Руководитель · director</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
+  <div id="app" class="app" hidden>
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="logo-mark">◆</span>
+        <span class="brand-name">ФрутСнаб</span>
+      </div>
+      <nav class="tabs" id="tabs"></nav>
+      <div class="topbar-right">
+        <span class="sync" id="sync-status" title="Автообновление каждые 15 секунд">●&nbsp;<span id="sync-time">—</span></span>
+        <div class="user-chip">
+          <span class="user-name" id="user-name"></span>
+          <span class="role-badge" id="user-role"></span>
+        </div>
+        <button class="btn btn-ghost" id="logout-btn">Выйти</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- ПОСТАВЩИКИ -->
+      <section class="page" id="page-suppliers" hidden>
+        <div class="page-head">
+          <div>
+            <h2>Поставщики</h2>
+            <p class="page-sub">Таблица 1 — закупочные предложения по фруктам.</p>
+          </div>
+          <button class="btn btn-primary" id="add-supplier" hidden>+ Поставщик</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="suppliers-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Фрукт</th><th class="num">Цена закупки, ₸/кг</th>
+                <th class="num">Остаток, кг</th><th>Поставщик</th>
+                <th class="num">Срок, дней</th><th class="actions-col"></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ЗАКАЗЫ -->
+      <section class="page" id="page-orders" hidden>
+        <div class="page-head">
+          <div>
+            <h2>Заказы</h2>
+            <p class="page-sub">Таблица 2 — при создании заказа поставщик и финансы рассчитываются автоматически.</p>
+          </div>
+          <button class="btn btn-primary" id="add-order" hidden>+ Заказ</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="orders-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Ресторан</th><th>Фрукт</th><th class="num">Кол-во, кг</th>
+                <th class="num">Цена прод., ₸/кг</th><th class="num">Сумма, ₸</th>
+                <th>Дата заказа</th><th>Срок клиенту</th><th>Поставщик</th>
+                <th>Статус</th><th class="actions-col"></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ФИНАНСЫ -->
+      <section class="page" id="page-finance" hidden>
+        <div class="page-head">
+          <div>
+            <h2>Финансы</h2>
+            <p class="page-sub" id="finance-sub"></p>
+          </div>
+        </div>
+        <div id="finance-cards" class="cards"></div>
+        <div id="finance-breakdowns" class="breakdowns"></div>
+        <div class="table-wrap">
+          <h3 class="block-title">Финансы по заказам</h3>
+          <table class="data-table" id="finance-orders-table">
+            <thead>
+              <tr><th>#</th><th>Ресторан</th><th>Фрукт</th><th class="num">Кол-во, кг</th>
+              <th class="num">Выручка, ₸</th><th class="num">Прибыль, ₸</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ИСТОРИЯ (только руководитель) -->
+      <section class="page" id="page-audit" hidden>
+        <div class="page-head">
+          <div>
+            <h2>История изменений</h2>
+            <p class="page-sub">Кто и когда менял записи.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="audit-table">
+            <thead>
+              <tr><th>Время</th><th>Пользователь</th><th>Объект</th><th>Действие</th><th>Детали</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО -->
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modal-title">—</h3>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <form id="modal-form" class="modal-form"></form>
+      <div id="modal-result" class="modal-result" hidden></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
